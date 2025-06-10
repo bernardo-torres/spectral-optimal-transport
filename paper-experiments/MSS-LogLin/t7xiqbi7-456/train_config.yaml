@@ -16,7 +16,7 @@ model:
     init_args:
       amp_resample_method: window
       amp_scale_fn: null
-      apply_roll_off: true
+      apply_roll_off: false
       freq_scale_fn: null
       harmonic: true
       n_samples: 4096

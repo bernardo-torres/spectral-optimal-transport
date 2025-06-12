@@ -1,5 +1,5 @@
 batch_size: 64
-ckpt_dirpath: logs/sot-paper/MSS-LogLin/t7xiqbi7-456/checkpoints
+ckpt_dirpath: logs/sot-paper/MSS-LogLin/t7xiqbi7-101112/checkpoints
 ckpt_path: null
 data:
   class_path: synthetic_data.PreloadedSinusoidDataModule
@@ -16,7 +16,7 @@ model:
     init_args:
       amp_resample_method: window
       amp_scale_fn: null
-      apply_roll_off: true
+      apply_roll_off: false
       freq_scale_fn: null
       harmonic: true
       n_samples: 4096
@@ -94,11 +94,11 @@ model:
   scheduler: null
   temperature: 0.1
   transform: identity
-name: MSS-LogLin-456
+name: MSS-LogLin-101112
 num_workers: 8
 project: sot-paper
 sample_rate: 16000
-seed_everything: 456
+seed_everything: 101112
 trainer:
   accelerator: gpu
   accumulate_grad_batches: null
@@ -147,7 +147,7 @@ trainer:
     class_path: pytorch_lightning.loggers.WandbLogger
     init_args:
       group: MSS-LogLin
-      name: MSS-LogLin-456
+      name: MSS-LogLin-101112
       project: sot-paper
       save_dir: logs/sot-paper/MSS-LogLin
   max_epochs: 500

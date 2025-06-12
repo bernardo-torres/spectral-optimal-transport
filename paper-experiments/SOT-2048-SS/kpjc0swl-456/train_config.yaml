@@ -1,12 +1,12 @@
 batch_size: 64
-ckpt_dirpath: logs/sot-paper/SOT-SingleScale/kpjc0swl-456/checkpoints
+ckpt_dirpath: logs/sot-paper/SOT-2048-SS/kpjc0swl-456/checkpoints
 ckpt_path: null
 data:
   class_path: synthetic_data.PreloadedSinusoidDataModule
   init_args:
     data_path: data/40_1950_4096_04_1_4000_8_1_harmonic.pth
 dataset: sinusoids-norm
-group: SOT-SingleScale
+group: SOT-2048-SS
 log_dir: logs
 loss: ''
 model:
@@ -113,7 +113,7 @@ model:
     output_format: Magnitude
     type: stft
     window: flattop
-name: SOT-SingleScale-456
+name: SOT-2048-SS-456
 num_workers: 8
 project: sot-paper
 sample_rate: 16000
@@ -136,7 +136,7 @@ trainer:
       every_n_train_steps: null
       filename: best-lsd-{epoch}-{step}
       mode: min
-      monitor: loss/val
+      monitor: val_metrics/log_spectral_distance
       save_last: null
       save_on_train_epoch_end: null
       save_top_k: 1
@@ -165,10 +165,10 @@ trainer:
   logger:
     class_path: pytorch_lightning.loggers.WandbLogger
     init_args:
-      group: SOT-SingleScale
-      name: SOT-SingleScale-456
+      group: SOT-2048-SS
+      name: SOT-2048-SS-456
       project: sot-paper
-      save_dir: logs/sot-paper/SOT-SingleScale
+      save_dir: logs/sot-paper/SOT-2048-SS
   max_epochs: 500
   max_steps: 25000
   max_time: null

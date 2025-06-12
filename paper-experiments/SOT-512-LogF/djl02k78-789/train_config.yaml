@@ -1,12 +1,12 @@
 batch_size: 64
-ckpt_dirpath: logs/sot-paper/SOT-512-LS/djl02k78-789/checkpoints
+ckpt_dirpath: logs/sot-paper/SOT-512-LogF/djl02k78-789/checkpoints
 ckpt_path: null
 data:
   class_path: synthetic_data.PreloadedSinusoidDataModule
   init_args:
     data_path: data/40_1950_4096_04_1_4000_8_1_harmonic.pth
 dataset: sinusoids-norm
-group: SOT-512-LS
+group: SOT-512-LogF
 log_dir: logs
 loss: ''
 model:
@@ -118,7 +118,7 @@ model:
     output_format: Magnitude
     type: stft
     window: flattop
-name: SOT-512-LS-789
+name: SOT-512-LogF-789
 num_workers: 8
 project: sot-paper
 sample_rate: 16000
@@ -170,10 +170,10 @@ trainer:
   logger:
     class_path: pytorch_lightning.loggers.WandbLogger
     init_args:
-      group: SOT-512-LS
-      name: SOT-512-LS-789
+      group: SOT-512-LogF
+      name: SOT-512-LogF-789
       project: sot-paper
-      save_dir: logs/sot-paper/SOT-512-LS
+      save_dir: logs/sot-paper/SOT-512-LogF
   max_epochs: 500
   max_steps: 25000
   max_time: null

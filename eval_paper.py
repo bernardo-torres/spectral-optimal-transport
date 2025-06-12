@@ -136,7 +136,7 @@ df = pd.DataFrame.from_dict(metrics, orient='index')
 df.to_csv(results_csv, mode='a', header=not os.path.exists(results_csv))
 
 run_ids = ['djl02k78', 'dq3u8gfz', 'tlrh627e', 'eulq6s1k', 'axlgb4wk']
-all_runs['SOT-512-LS'] = run_ids
+all_runs['SOT-512-LogF'] = run_ids
 metrics = run_runs(run_ids, category)
 df = pd.DataFrame.from_dict(metrics, orient='index')
 df.to_csv(results_csv, mode='a', header=not os.path.exists(results_csv))
@@ -159,7 +159,7 @@ df = pd.DataFrame.from_dict(metrics, orient='index')
 df.to_csv(results_csv, mode='a', header=not os.path.exists(results_csv))
 
 run_ids = ['tiye34tk', 'qopjdrer', 'kpjc0swl', 'ljodmk4w', '3ixmkm41']
-all_runs['SOT-SingleScale'] = run_ids
+all_runs['SOT-2048-SS'] = run_ids
 metrics = run_runs(run_ids, category)
 df = pd.DataFrame.from_dict(metrics, orient='index')
 df.to_csv(results_csv, mode='a', header=not os.path.exists(results_csv))

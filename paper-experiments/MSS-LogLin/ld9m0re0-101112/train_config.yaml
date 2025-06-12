@@ -1,12 +1,12 @@
 batch_size: 64
-ckpt_dirpath: logs/sot-paper/MSS-Lin/cmq8ltuc-456/checkpoints
+ckpt_dirpath: logs/sot-paper/MSS-LogLin/ld9m0re0-456/checkpoints
 ckpt_path: null
 data:
   class_path: synthetic_data.PreloadedSinusoidDataModule
   init_args:
     data_path: data/40_1950_4096_04_1_4000_8_1_harmonic.pth
 dataset: sinusoids-norm
-group: MSS-Lin
+group: MSS-LogLin
 log_dir: logs
 loss: ''
 model:
@@ -80,7 +80,7 @@ model:
       - 256
       - 128
       - 64
-      logmag_weight: 0
+      logmag_weight: 1
       loss_type: L1
       mag_weight: 1
   optimizer_init:
@@ -94,7 +94,7 @@ model:
   scheduler: null
   temperature: 0.1
   transform: identity
-name: MSS-Lin-456
+name: MSS-LogLin-456
 num_workers: 8
 project: sot-paper
 sample_rate: 16000
@@ -146,10 +146,10 @@ trainer:
   logger:
     class_path: pytorch_lightning.loggers.WandbLogger
     init_args:
-      group: MSS-Lin
-      name: MSS-Lin-456
+      group: MSS-LogLin
+      name: MSS-LogLin-456
       project: sot-paper
-      save_dir: logs/sot-paper/MSS-Lin
+      save_dir: logs/sot-paper/MSS-LogLin
   max_epochs: 500
   max_steps: 25000
   max_time: null

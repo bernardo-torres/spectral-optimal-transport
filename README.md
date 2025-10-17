@@ -68,7 +68,7 @@ These parameters are available in both `Wasserstein1DLoss` and `MultiResolutionS
 | `dim` | int | `-1` | The dimension along which to compute the Wasserstein distance. `-1` for frequency, `-2` for time. |
 | `normalize` | bool | `True` | If `True`, normalizes the spectral magnitudes to sum to 1, treating them as probability distributions. |
 | `balanced` | bool | `True` | If `True` and `normalize` is `True`, both spectra are normalized to sum to 1 independently. If `False` and `normalize` is `True`, the second spectrum is scaled relative to the first. |
-| `p` | int | `2` | The order of the Wasserstein distance (e.g., `p=1` for Earth Mover's Distance, `p=2` for a quadratic cost). |
+| `p` | int | `2` | The order of the Wasserstein distance. |
 | `quantile_lowpass` | bool | `False` | If `True`, applies a frequency cutoff by zeroing out distances for quantiles above 1.0. This is useful when `balanced` is `False`. |
 
 

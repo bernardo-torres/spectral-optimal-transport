@@ -46,6 +46,42 @@ loss = sot_loss(x, y)
 print(loss)
 ```
 
+
+## Advanced Usage
+
+The `Wasserstein1DLoss` and `MultiResolutionSOTLoss` classes offer a range of parameters to customize the spectral representation and the loss calculation.
+
+### Spectral Transform Parameters
+
+These parameters are available in both `Wasserstein1DLoss` and `MultiResolutionSOTLoss`.
+
+| Argument | Type | Default | Description |
+|---|---|---|---|
+| `transform` | str | `'stft'` | The spectral transform to use. One of `'stft'`, `'mel'`, `'cqt'`, or `'identity'`. |
+| `fft_size`, `hop_length`, `win_length` | int | `1024`, `256`, `None`  | Your typical STFT parameters. |
+| `window`| str | `'flattop'`| The window function to use for STFT and CQT. |
+| `n_mels`| int | `128` | Number of Mel bins for the Mel spectrogram. |
+| `n_bins`, `bins_per_octave`, `fmin`, `fmax`, `sample_rate` | int, int, float, float | `84`, `36`, `32.7`, `None`, `22050` | CQT parameters. |
+| `gamma` | int | `0` | VQT parameter which reduces kernel lengths for low frequencies. `0` for traditional CQT (see [This paper](https://transactions.ismir.net/articles/10.5334/tismir.251)) . |
+| `bin_position_scaling` | str | `'normalized'` | Defines how the ground distance for the Wasserstein calculation is measured. Affects how the bin positions for the transforms are calculated. One of `'normalized'`, `'normalized_linear'`, or `'absolute'`. |
+| `square_magnitude` | bool | `False` | If `True`, computes the loss on the squared magnitude of the spectrum (power). |
+| `dim` | int | `-1` | The dimension along which to compute the Wasserstein distance. `-1` for frequency, `-2` for time. |
+| `normalize` | bool | `True` | If `True`, normalizes the spectral magnitudes to sum to 1, treating them as probability distributions. |
+| `balanced` | bool | `True` | If `True` and `normalize` is `True`, both spectra are normalized to sum to 1 independently. If `False` and `normalize` is `True`, the second spectrum is scaled relative to the first. |
+| `p` | int | `2` | The order of the Wasserstein distance (e.g., `p=1` for Earth Mover's Distance, `p=2` for a quadratic cost). |
+| `quantile_lowpass` | bool | `False` | If `True`, applies a frequency cutoff by zeroing out distances for quantiles above 1.0. This is useful when `balanced` is `False`. |
+
+
+
+The `MultiResolutionSOTLoss` combines multiple `Wasserstein1DLoss` instances, each with a different set of STFT parameters.
+
+| Argument | Type | Default | Description |
+|---|---|---|---|
+| `fft_sizes` | list | `[1024, 2048, 512]` | A list of FFT sizes to use for each resolution. |
+| `hop_lengths` | list | `[256, 512, 128]` | A list of hop lengths to use for each resolution. |
+| `win_lengths` | list | `None` | A list of window lengths to use for each resolution. If `None`, defaults to `fft_sizes`. |
+
+
 ## About the Paper
 [Paper (arXiv)](https://arxiv.org/abs/2312.14507)
 <!-- [![Paper (arXiv)](https://img.shields.io/badge/arXiv-2312.14507-b31b1b.svg)](https://arxiv.org/abs/2312.14507) -->

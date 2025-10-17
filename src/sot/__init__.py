@@ -1,0 +1,1 @@
+from sot.losses import Wasserstein1DLoss, MultiResolutionSOTLoss

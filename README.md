@@ -1,17 +1,14 @@
-# An optimal transport inspired loss function for improving frequency localization in differentiable DSP
+# Spectral Optimal Transport Losses for PyTorch 
 
-[Paper (arXiv)](https://arxiv.org/abs/2312.14507)
-<!-- [![Paper (arXiv)](https://img.shields.io/badge/arXiv-2312.14507-b31b1b.svg)](https://arxiv.org/abs/2312.14507) -->
 
-This is the official repository for the paper "[Unsupervised Harmonic Parameter Estimation Using Differentiable DSP and Spectral Optimal Transport.](https://arxiv.org/abs/2312.14507)", by *Bernardo Torres, Geoffroy Peeters, and Gaël Richard*. Check out the [poster here](https://bernardo-torres.github.io/documents/Torres_ICASSP_2024_poster.pdf).
+[![Paper (arXiv)](https://img.shields.io/badge/arXiv-2312.14507-b31b1b.svg)](https://arxiv.org/abs/2312.14507)
 
-We introduce a loss function for comparing spectra *horizontally* inspired by optimal transport. It computes the one dimensional Wasserstein distance between the spectra of two signals, which gives a measure of energy displacement along the frequency axis. 
+This repository contains an implementation of Spectral Optimal Transport (SOT) loss functions for PyTorch, with a pip-installable package `sot-loss`. SOT loss functions are differentiable spectral losses which compare the spectra of two audio signals using optimal transport principles. These loss functions can be used for training neural networks in audio processing tasks, particularly those involving DDSP. It can also be used more generally as a metric for audio signal comparison. 
 
-<!-- Place two figures side by side, add a title above each -->
 <table>
   <tr>
     <td>
-      <p align="center"><b>We propose doing this  <br>                           </b></p>
+      <p align="center"><b>SOT does this  <br>                           </b></p>
       <img src="figures/poster_spectra_horizontal_transport_lines.png" width="380" />
     </td>
     <td>
@@ -20,6 +17,43 @@ We introduce a loss function for comparing spectra *horizontally* inspired by op
     </td>
   </tr>
 </table>
+
+## Installation
+
+You can install the `sot-loss` package using pip:
+
+```bash
+pip install sot-loss
+```
+
+## Usage
+
+The primary components of this package are the `Wasserstein1DLoss` and `MultiResolutionSOTLoss` classes, which can be used as PyTorch loss functions. Here is a basic example of how to use the `Wasserstein1DLoss`:
+
+```python
+import torch
+from sot import Wasserstein1DLoss
+
+# Create some dummy audio signals
+x = torch.randn(4, 16000)
+y = torch.randn(4, 16000)
+
+# Initialize the SOT loss
+sot_loss = Wasserstein1DLoss(transform='stft', fft_size=1024, hop_length=256)
+
+# Compute the loss
+loss = sot_loss(x, y)
+print(loss)
+```
+
+## About the Paper
+[Paper (arXiv)](https://arxiv.org/abs/2312.14507)
+<!-- [![Paper (arXiv)](https://img.shields.io/badge/arXiv-2312.14507-b31b1b.svg)](https://arxiv.org/abs/2312.14507) -->
+
+This is the also the official repository for the paper "[Unsupervised Harmonic Parameter Estimation Using Differentiable DSP and Spectral Optimal Transport.](https://arxiv.org/abs/2312.14507)", by *Bernardo Torres, Geoffroy Peeters, and Gaël Richard*. Check out the [poster here](https://bernardo-torres.github.io/documents/Torres_ICASSP_2024_poster.pdf).
+
+The paper introduces a loss function for comparing spectra *horizontally* inspired by optimal transport. It computes the one dimensional Wasserstein distance between the spectra of two signals, which gives a measure of energy displacement along the frequency axis. 
+
 
 
 
@@ -55,10 +89,10 @@ The [loss function](https://github.com/bernardo-torres/1d-spectral-optimal-trans
 - **Some things to be careful about**: SOT can be quite sensitive to spectral leakage and noise, so it definitely works better if your spectra have clear modes and are not only noise. This is due mostly to normalization. You can definitely threshold your noise or remove low amplitude points entirely, SOT works even if your spectra have different support :) (they just have to live in the same metric space and have each amplitude value associated with a frequency value).
 
 
-## Data Description
+### Data Description
 The synthetic data used for training, evaluation, and testing is available [here](https://drive.google.com/file/d/1_aZzEK82Ko7IjXzyTFZqTtglwIbtnrL3/view?usp=sharing). You can download it and put the file `40_1950_4096_04_1_4000_8_1_harmonic.pth` in a data subfolder. You can use PreloadedSinusoidDataModule in [synthetic_data.py](synthetic_data.py) to load it easily. Code for generating the data is also available.
 
-## Running Experiments
+### Running Experiments
 
 We recommend installing the dependencies in a virtual environment. We provide the conda environment file used [[environment.yml]](environment.yml). If your cuda version checks out, you can run the following commands to create the environment and activate it:
 

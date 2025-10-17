@@ -1,0 +1,55 @@
+# Specifies that this project uses Setuptools as its build system.
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+# All metadata and dependencies for your project go in this section.
+[project]
+name = "sot-loss"
+version = "0.1.1"
+authors = [
+  { name="Bernardo Torres"},
+]
+description = "A PyTorch implementation of Spectral Optimal Transport (SOT) losses for audio."
+readme = "README_PyPI.md"
+requires-python = ">=3.9"
+license = { text = "MIT License" } # Explicitly state the license
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "torch>=2.0.1",
+    "torchaudio>=2.0.0",
+    "numpy>=1.20.0",
+    "scipy>=1.8.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/bernardo-torres/spectral-optimal-transport"
+"Bug Tracker" = "https://github.com/bernardo-torres/spectral-optimal-transport/issues"
+
+# --- Optional: Configuration for development tools ---
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.ruff]
+line-length = 88
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort (import sorting)
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = ["E501"] # Ignore line too long, handled by black
+
+[tool.ruff.isort]
+known-first-party = ["sot"]

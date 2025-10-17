@@ -241,7 +241,6 @@ class _BaseSOTLoss(nn.Module):
                 device=device,
             )
         elif transform is None or transform == "identity":
-            print(f"Unknown transform {transform}, defaulting to identity")
             self.transform_module = nn.Identity()
         else:
             raise ValueError(f"Unknown transform {transform}")
@@ -258,6 +257,10 @@ class _BaseSOTLoss(nn.Module):
         self.reduce = reduce
         self.return_quantiles = return_quantiles
         self.to(device)
+
+    @property
+    def identity_transform(self):
+        return isinstance(self.transform_module, nn.Identity)
 
     def forward(self, x, y, x_positions=None, y_positions=None):
         """Computes the loss between two audio signals.
@@ -288,7 +291,7 @@ class _BaseSOTLoss(nn.Module):
             y = y.unsqueeze(0)
 
         self.was_stereo = False
-        if x.ndim == 3:
+        if x.ndim == 3 and self.identity_transform is False:
             # Stereo, we move to batch dimension
             x = x.view(-1, x.shape[-1])
             self.was_stereo = True

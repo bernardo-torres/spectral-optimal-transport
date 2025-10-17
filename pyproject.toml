@@ -6,12 +6,12 @@ build-backend = "setuptools.build_meta"
 # All metadata and dependencies for your project go in this section.
 [project]
 name = "sot-loss"
-version = "0.1.1"
+version = "0.1.2"
 authors = [
   { name="Bernardo Torres"},
 ]
 description = "A PyTorch implementation of Spectral Optimal Transport (SOT) losses for audio."
-readme = "README_PyPI.md"
+readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT License" } # Explicitly state the license
 classifiers = [

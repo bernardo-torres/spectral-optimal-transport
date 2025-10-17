@@ -39,10 +39,32 @@ x = torch.randn(4, 16000)
 y = torch.randn(4, 16000)
 
 # Initialize the SOT loss
-sot_loss = Wasserstein1DLoss(transform='stft', fft_size=1024, hop_length=256)
+sot_loss = Wasserstein1DLoss(transform='stft', 
+                             fft_size=2048,
+                             hop_length=512, 
+                             sample_rate=16000, 
+                             window='flattop', 
+                             square_magnitude=True)
 
 # Compute the loss
 loss = sot_loss(x, y)
+print(loss)
+```
+
+Using your own mapping audio -> 2D representation:
+
+```python
+x_spec = custom_transform(x) # batch, channels, time
+y_spec = custom_transform(y) 
+x_positions = get_custom_positions(x_spec) # channels
+y_positions = get_custom_positions(y_spec)
+
+sot_loss = Wasserstein1DLoss(transform='identity',
+                             # other non-transform parameters can go here
+                             balanced=True,
+                             normalize=True,
+                             )
+loss = sot_loss(x_spec, y_spec, x_positions=x_positions, y_positions=y_positions)
 print(loss)
 ```
 
@@ -55,6 +77,7 @@ The `Wasserstein1DLoss` and `MultiResolutionSOTLoss` classes offer a range of pa
 
 These parameters are available in both `Wasserstein1DLoss` and `MultiResolutionSOTLoss`.
 
+Transform parameters (if using built-in transforms):
 | Argument | Type | Default | Description |
 |---|---|---|---|
 | `transform` | str | `'stft'` | The spectral transform to use. One of `'stft'`, `'mel'`, `'cqt'`, or `'identity'`. |
@@ -64,6 +87,11 @@ These parameters are available in both `Wasserstein1DLoss` and `MultiResolutionS
 | `n_bins`, `bins_per_octave`, `fmin`, `fmax`, `sample_rate` | int, int, float, float | `84`, `36`, `32.7`, `None`, `22050` | CQT parameters. |
 | `gamma` | int | `0` | VQT parameter which reduces kernel lengths for low frequencies. `0` for traditional CQT (see [This paper](https://transactions.ismir.net/articles/10.5334/tismir.251)) . |
 | `bin_position_scaling` | str | `'normalized'` | Defines how the ground distance for the Wasserstein calculation is measured. Affects how the bin positions for the transforms are calculated. One of `'normalized'`, `'normalized_linear'`, or `'absolute'`. |
+
+Loss parameters (applies even if using custom transforms):
+
+| Argument | Type | Default | Description |
+|---|---|---|---|
 | `square_magnitude` | bool | `False` | If `True`, computes the loss on the squared magnitude of the spectrum (power). |
 | `dim` | int | `-1` | The dimension along which to compute the Wasserstein distance. `-1` for frequency, `-2` for time. |
 | `normalize` | bool | `True` | If `True`, normalizes the spectral magnitudes to sum to 1, treating them as probability distributions. |

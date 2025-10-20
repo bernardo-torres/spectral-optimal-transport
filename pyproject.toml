@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 # All metadata and dependencies for your project go in this section.
 [project]
 name = "sot-loss"
-version = "0.1.2"
+version = "0.1.3"
 authors = [
   { name="Bernardo Torres"},
 ]
@@ -32,6 +32,10 @@ dependencies = [
 [project.urls]
 "Homepage" = "https://github.com/bernardo-torres/spectral-optimal-transport"
 "Bug Tracker" = "https://github.com/bernardo-torres/spectral-optimal-transport/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
 
 # --- Optional: Configuration for development tools ---
 

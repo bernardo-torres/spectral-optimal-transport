@@ -1,7 +1,7 @@
 # Spectral Optimal Transport Losses for PyTorch 
 
 
-[![Paper (arXiv)](https://img.shields.io/badge/arXiv-2312.14507-b31b1b.svg)](https://arxiv.org/abs/2312.14507)
+[![PyPI Version](https://img.shields.io/pypi/v/sot-loss)](https://pypi.org/project/sot-loss/) [![Paper (arXiv)](https://img.shields.io/badge/arXiv-2312.14507-b31b1b.svg)](https://arxiv.org/abs/2312.14507)
 
 This repository contains an implementation of Spectral Optimal Transport (SOT) loss functions for PyTorch, with a pip-installable package `sot-loss`. SOT loss functions are differentiable spectral losses which compare the spectra of two audio signals using optimal transport principles. These loss functions can be used for training neural networks in audio processing tasks, particularly those involving DDSP. It can also be used more generally as a metric for audio signal comparison. 
 

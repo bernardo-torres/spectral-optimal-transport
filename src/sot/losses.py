@@ -7,10 +7,8 @@ or CQT representations. A multi-resolution version is also available to
 capture spectral differences at different time-frequency trade-offs.
 """
 
-import numpy as np
 import torch
 import torch.nn as nn
-from scipy.signal import get_window
 
 from sot.features import STFT, VQT, MelSpectrogram
 
@@ -241,6 +239,7 @@ class _BaseSOTLoss(nn.Module):
                 device=device,
             )
         elif transform is None or transform == "identity":
+            print(f"Unknown transform {transform}, defaulting to identity")
             self.transform_module = nn.Identity()
         else:
             raise ValueError(f"Unknown transform {transform}")
@@ -257,10 +256,6 @@ class _BaseSOTLoss(nn.Module):
         self.reduce = reduce
         self.return_quantiles = return_quantiles
         self.to(device)
-
-    @property
-    def identity_transform(self):
-        return isinstance(self.transform_module, nn.Identity)
 
     def forward(self, x, y, x_positions=None, y_positions=None):
         """Computes the loss between two audio signals.
@@ -282,8 +277,9 @@ class _BaseSOTLoss(nn.Module):
         Returns:
             torch.Tensor: The computed loss value.
         """
-        x = x.to(self.device)
-        y = y.to(self.device)
+        device = x.device if x is not None else self.device
+        x = x.to(device)
+        y = y.to(device)
 
         if x.ndim == 1:
             x = x.unsqueeze(0)
@@ -291,7 +287,7 @@ class _BaseSOTLoss(nn.Module):
             y = y.unsqueeze(0)
 
         self.was_stereo = False
-        if x.ndim == 3 and self.identity_transform is False:
+        if x.ndim == 3:
             # Stereo, we move to batch dimension
             x = x.view(-1, x.shape[-1])
             self.was_stereo = True
@@ -318,8 +314,13 @@ class _BaseSOTLoss(nn.Module):
 
         if x_pos is None and self.dim == -2 or self.dim == 1:
             # We consider the time dimension, we create a dummy position vector
-            x_pos = torch.arange(x_spec.shape[1], device=self.device).float()
-            y_pos = torch.arange(y_spec.shape[1], device=self.device).float()
+            x_pos = torch.arange(x_spec.shape[1], device=device).float()
+            y_pos = torch.arange(y_spec.shape[1], device=device).float()
+
+        if x_pos is not None:
+            x_pos = x_pos.to(device)
+        if y_pos is not None:
+            y_pos = y_pos.to(device)
 
         loss = self.loss(x_spec, y_spec, x_positions=x_pos, y_positions=y_pos)
         if self.return_quantiles:

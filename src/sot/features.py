@@ -41,10 +41,13 @@ class STFT(_BaseTransform):
         self.hop_size = hop_length
         self.sr = sr
         self.win_length = win_length if win_length else fft_size
-        self.window = torch.tensor(
-            get_window(window, self.win_length, fftbins=True),
-            dtype=torch.float32,
-        ).to(device)
+        self.register_buffer(
+            "window",
+            torch.tensor(
+                get_window(window, self.win_length, fftbins=True),
+                dtype=torch.float32,
+            ),
+        )
 
     def get_bin_positions(self):
         """Returns normalized frequency bin positions for STFT."""
@@ -55,7 +58,6 @@ class STFT(_BaseTransform):
 
     def forward(self, x):
         """Computes the Short-Time Fourier Transform."""
-        x = x.to(self.device)
         spec = torch.stft(
             x,
             n_fft=self.fft_size,
@@ -97,7 +99,6 @@ class MelSpectrogram(_BaseTransform):
 
     def forward(self, x):
         """Computes the Mel Spectrogram."""
-        x = x.to(self.device)
         return self.transform(x)
 
 
@@ -146,5 +147,5 @@ class VQT(_BaseTransform):
 
     def forward(self, x):
         """Computes the Constant-Q Transform."""
-        x = x.to(self.device).float()
+        x = x.float()
         return torch.abs(self.transform(x))

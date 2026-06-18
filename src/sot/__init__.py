@@ -1,1 +1,1 @@
-from sot.losses import Wasserstein1DLoss, MultiResolutionSOTLoss
+from sot.losses import Wasserstein1DLoss, MultiResolutionSOTLoss, wasserstein_1d_circle

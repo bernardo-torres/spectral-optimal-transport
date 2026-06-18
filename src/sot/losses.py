@@ -13,6 +13,85 @@ import torch.nn as nn
 from sot.features import STFT, VQT, MelSpectrogram
 
 
+def _weighted_median_1d(values, weights):
+    """Batched weighted median. Maps (batch, n) -> (batch, 1).
+
+    Finds the smallest value v such that the cumulative weight of all values <= v
+    is at least half the total weight.
+    """
+    sorted_vals, order = torch.sort(values, dim=1)
+    sorted_wts = weights.gather(1, order)
+    cumulative = torch.cumsum(sorted_wts, dim=1)
+    half = 0.5 * cumulative[:, -1:]
+    idx = torch.searchsorted(cumulative.contiguous(), half.contiguous())
+    return sorted_vals.gather(1, idx.clamp(0, values.shape[1] - 1))
+
+
+def wasserstein_1d_circle(u_values, v_values, u_weights=None, v_weights=None, require_sort=True):
+    """1-Wasserstein distance on the circle S^1 (p=1 only) via the level median formula.
+
+    Computes:
+        W_1(u, v; S^1) = integral_0^1 |F_u(t) - F_v(t) - alpha*| dt
+
+    where alpha* = LevelMed(F_u - F_v) is the weighted median of the piecewise-constant
+    CDF difference, with weights equal to the widths of the intervals between support points.
+    The optimal alpha* is treated as a constant.
+
+    Values outside [0, 1) are taken modulo 1. Both weight tensors must already be
+    normalized to sum to 1. Designed for distributions on a periodic domain (e.g., pitch
+    class distributions over one octave). Use with transform='identity' and positions in
+    [0, 1) (e.g., torch.arange(n) / n); built-in transforms use linspace(0, 1, n) which
+    maps the endpoint 1 to 0 under mod and is not recommended for circular mode.
+
+    Args:
+        u_values (torch.Tensor): Positions of u's mass, shape (batch, n).
+        v_values (torch.Tensor): Positions of v's mass, shape (batch, m).
+        u_weights (torch.Tensor, optional): Weights summing to 1, shape (batch, n).
+            Defaults to uniform.
+        v_weights (torch.Tensor, optional): Weights summing to 1, shape (batch, m).
+            Defaults to uniform.
+        require_sort (bool): If False, inputs are assumed to already be sorted.
+
+    Returns:
+        torch.Tensor: W_1 distances, shape (batch,).
+    """
+    n, m = u_values.shape[1], v_values.shape[1]
+
+    if u_weights is None:
+        u_weights = torch.full_like(u_values, 1.0 / n)
+    if v_weights is None:
+        v_weights = torch.full_like(v_values, 1.0 / m)
+
+    u_values = u_values % 1
+    v_values = v_values % 1
+
+    if require_sort:
+        u_values, u_idx = torch.sort(u_values, dim=1)
+        v_values, v_idx = torch.sort(v_values, dim=1)
+        u_weights = u_weights.gather(1, u_idx)
+        v_weights = v_weights.gather(1, v_idx)
+
+    # Merge both supports, assign +1 sign to u and -1 to v
+    vals = torch.cat([u_values, v_values], dim=1)
+    wts = torch.cat([u_weights, -v_weights], dim=1)
+    vals, order = torch.sort(vals, dim=1)
+    wts = wts.gather(1, order)
+
+    # F_u(t) - F_v(t) evaluated just after each support point (held constant rightward)
+    cdf_diff = torch.cumsum(wts, dim=1)
+
+    # Width of each piecewise-constant interval, including the wrap-around piece [vals[-1], 1)
+    # cdf_diff at the last point equals sum(u_weights) - sum(v_weights) = 0
+    delta = torch.diff(vals, dim=1)
+    delta = torch.cat([delta, 1.0 - vals[:, -1:]], dim=1)
+
+    # Level median: weighted median of cdf_diff with weights = interval widths
+    # Detach so the optimal cut point alpha* is a constant w.r.t. backprop
+    level_med = _weighted_median_1d(cdf_diff, delta).detach()
+
+    return torch.sum(delta * torch.abs(cdf_diff - level_med), dim=1)
+
+
 def quantile_function(qs, cws, xs):
     """Computes the quantile function (inverse CDF) for a discrete distribution.
 
@@ -44,19 +123,19 @@ def wasserstein_1d(
     limit_quantile_range=False,
 ):
     """Approximates the 1D Wasserstein distance between two distributions by a sum of distances between quantiles.
-    We assume  (u_weights, v_weights)  belong to the space of probability vectors, $i.e.$ $u_weights \in \Sigma_n$ and
-    $v_weights \in \Sigma_m$, for $\Sigma_n = \left\{\mathbf{a} \in \mathbb{R}^n_+ ; \sum_{i=1}^n \mathbf{a}_i = 1 \right\}$.
+    We assume  (u_weights, v_weights)  belong to the space of probability vectors, $i.e.$ $u_weights \\in \\Sigma_n$ and
+    $v_weights \\in \\Sigma_m$, for $\\Sigma_n = \\left\\{\\mathbf{a} \\in \\mathbb{R}^n_+ ; \\sum_{i=1}^n \\mathbf{a}_i = 1 \right\\}$.
     That means the weights are normalized to sum to 1 and are non-negative.
 
     The Wasserstein distance between two one dimensional distributions can be expressed in closed form as [1, prop. 2.17, 2, Remark 2.30]:
 
-     \mathcal{W}_p(\alpha, \beta)^{p} =  \int_0^1 \left| F^{-1}_{\alpha}(r) - F^{-1}_{\beta}(r) \right|^p dr
+     \\mathcal{W}_p(\alpha, \beta)^{p} =  \\int_0^1 \\left| F^{-1}_{\alpha}(r) - F^{-1}_{\beta}(r) \right|^p dr
 
     where F^{-1}_{\alpha} is the quantile function, or inverse CDF of \alpha.
 
     We approximate this integral by a sum of distances between quantiles as it's done in POT [3]:
 
-    \mathcal{W}_p(\alpha, \beta)^{p} =  \sum_{i=1}^n \left| F^{-1}_{\alpha}(r_i) - F^{-1}_{\beta}(r_i) \right|^p (r_i - r_{i-1}),
+    \\mathcal{W}_p(\alpha, \beta)^{p} =  \\sum_{i=1}^n \\left| F^{-1}_{\alpha}(r_i) - F^{-1}_{\beta}(r_i) \right|^p (r_i - r_{i-1}),
 
     where r_i is the ith quantile of the ordered set of quantiles of \alpha and \beta. We use the step function to compute and inverse the
         CDF by "holding" the value of the quantile constant between quantiles.
@@ -142,6 +221,7 @@ class _BaseSOTLoss(nn.Module):
         gamma=0,
         fmin=32.7,
         fmax=None,
+        log=False,
         sample_rate=22050,
         bin_position_scaling="normalized",  # 'normalized', 'absolute', 'normalized_linear'
         square_magnitude=False,
@@ -175,6 +255,8 @@ class _BaseSOTLoss(nn.Module):
             fmin (float, optional): Minimum frequency for CQT. Defaults to 32.7.
             fmax (float, optional): Maximum frequency for CQT. If None, it is
                 determined by `n_bins`. Defaults to None.
+            log (bool, optional): If True, applies a logarithmic scaling to the spectral magnitudes before computing the loss. Defaults to False.
+                Applied after any optional squaring of the magnitudes.
             sample_rate (int, optional): The sample rate of the input audio.
                 Defaults to 22050.
             bin_position_scaling (str, optional): Defines how the ground distance
@@ -253,6 +335,7 @@ class _BaseSOTLoss(nn.Module):
             self.bin_positions = None
         self.eps = eps
         self.square_magnitude = square_magnitude
+        self.log = log
         self.reduce = reduce
         self.return_quantiles = return_quantiles
         self.to(device)
@@ -309,6 +392,10 @@ class _BaseSOTLoss(nn.Module):
             x_spec = x_spec**2
             y_spec = y_spec**2
 
+        if self.log:
+            x_spec = torch.log(x_spec + self.eps)
+            y_spec = torch.log(y_spec + self.eps)
+
         x_pos = x_positions if x_positions is not None else self.bin_positions
         y_pos = y_positions if y_positions is not None else self.bin_positions
 
@@ -355,6 +442,7 @@ class Wasserstein1DLoss(_BaseSOTLoss):
         eps=1e-8,
         dim=-1,
         apply_root=False,  # Wether to return Wp_p or Wp. Wp^p might be more stable for optimization
+        circular=False,
         device="cpu",
         **kwargs,
     ):
@@ -370,9 +458,10 @@ class Wasserstein1DLoss(_BaseSOTLoss):
                 the second spectrum is scaled relative to the first. Defaults to True.
             p (int, optional): The order of the Wasserstein distance (e.g., p=1 for
                 Earth Mover's Distance, p=2 for a quadratic cost). Defaults to 2.
+                Ignored when ``circular=True`` (always p=1).
             return_quantiles (bool, optional): If True, the forward pass returns
                 intermediate quantile information instead of the loss.
-                Defaults to False.
+                Defaults to False. Not supported with ``circular=True``.
             quantile_lowpass (bool, optional): If True, applies a frequency cutoff
                 by zeroing out distances for quantiles above 1.0. This is useful
                 when `balanced` is False. Defaults to False.
@@ -382,6 +471,10 @@ class Wasserstein1DLoss(_BaseSOTLoss):
             apply_root (bool, optional): If True, applies the p-th root to the result
                 to get the true W_p distance. If False, returns W_p^p, which can be
                 more stable for optimization. Defaults to False.
+            circular (bool, optional): If True, computes the 1-Wasserstein distance on
+                the circle S^1 (p=1) using the level median formula. Bin positions must
+                lie in [0, 1); use ``transform='identity'`` with positions like
+                ``torch.arange(n) / n``. Defaults to False.
             device (str, optional): The compute device. Defaults to "cpu".
         """
         super().__init__(
@@ -393,6 +486,7 @@ class Wasserstein1DLoss(_BaseSOTLoss):
         self.return_quantiles = return_quantiles
         self.quantile_lowpass = quantile_lowpass
         self.apply_root = apply_root
+        self.circular = circular
         self.dim = dim
 
     def loss(self, x_spec, y_spec, x_positions=None, y_positions=None):
@@ -439,27 +533,30 @@ class Wasserstein1DLoss(_BaseSOTLoss):
         if y_positions.ndim == 1:
             y_positions = y_positions.expand_as(y_spec)
 
-        loss = wasserstein_1d(
-            x_positions,
-            y_positions,
-            x_spec,
-            y_spec,
-            p=self.p,
-            require_sort=True,
-            return_quantiles=self.return_quantiles,
-            limit_quantile_range=self.quantile_lowpass,
-        )
+        if self.circular:
+            loss = wasserstein_1d_circle(x_positions, y_positions, x_spec, y_spec)
+        else:
+            loss = wasserstein_1d(
+                x_positions,
+                y_positions,
+                x_spec,
+                y_spec,
+                p=self.p,
+                require_sort=True,
+                return_quantiles=self.return_quantiles,
+                limit_quantile_range=self.quantile_lowpass,
+            )
 
-        if self.apply_root and not self.return_quantiles:
-            if self.p == 1:
-                pass
-            elif self.p == 2:
-                loss = torch.sqrt(loss + self.eps)
-            else:
-                loss = loss.pow(1.0 / self.p)
-        if self.return_quantiles:
-            loss = [l.reshape(original_shape + (-1,)) for l in loss]
-            return loss
+            if self.apply_root and not self.return_quantiles:
+                if self.p == 1:
+                    pass
+                elif self.p == 2:
+                    loss = torch.sqrt(loss + self.eps)
+                else:
+                    loss = loss.pow(1.0 / self.p)
+            if self.return_quantiles:
+                loss = [l.reshape(original_shape + (-1,)) for l in loss]
+                return loss
 
         return loss
 
